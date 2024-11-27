@@ -3,8 +3,8 @@ import Modal from '@/Components/Modal';
 import { IoIosAddCircle } from "react-icons/io";
 import { router } from '@inertiajs/react';
 
-export function CreateModal({ initialOpen = false, fields, submitUrl }) {
-    const [isOpen, setIsOpen] = useState(initialOpen);
+export function CreateModal({ fields = [], submitUrl, state, set }) {
+    
     const [values, setValues] = useState(
         fields.reduce((acc, field) => {
             acc[field.name] = field.value || '';
@@ -20,24 +20,20 @@ export function CreateModal({ initialOpen = false, fields, submitUrl }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         router.post(submitUrl, values);
-        closeModal();
+        set(!state)
     };
 
-    const openModal = () => setIsOpen(true);
-    const closeModal = () => setIsOpen(false);
+    const closeModal = () => {
+        set(!state)
+    }
 
     return (
         <>
-            <button onClick={openModal} className="flex flex-col justify-center items-center gap-2 group">
-                <IoIosAddCircle className="text-xl" />
-                <div className="group-hover:text-orange-500">Create</div>
-            </button>
-
-            <Modal show={isOpen} onClose={closeModal}>
+            <Modal show={state} onClose={() => closeModal()}>
                 <form onSubmit={handleSubmit} className="p-6 bg-white rounded shadow-lg mx-auto">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-lg font-bold">Create New Project</h2>
-                        <button onClick={closeModal} aria-label="Close modal" className="text-gray-500 hover:text-orange-500 text-2xl">
+                        <h2 className="text-lg font-bold">Create</h2>
+                        <button onClick={() => closeModal()} aria-label="Close modal" className="text-gray-500 hover:text-orange-500 text-2xl">
                             &times;
                         </button>
                     </div>
@@ -80,7 +76,6 @@ export function CreateModal({ initialOpen = false, fields, submitUrl }) {
                             )}
                         </div>
                     ))}
-
                     <div className="flex justify-end">
                         <button type="submit" className="rounded-lg border p-2 w-32 hover:text-orange-500">
                             Save

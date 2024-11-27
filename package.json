@@ -1,0 +1,25 @@
+{
+  "name": "table",
+  "version": "1.0.0",
+  "description": "This project features a dynamic table component designed to seamlessly integrate data from the backend, eliminating the need to manually construct a table for every project. It leverages Inertia.js and React.js, ensuring efficient and reusable table generation for various use cases. ",
+  "main": "index.tsx",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JoshuaHeathcote1987/Table.git"
+  },
+  "keywords": [
+    "table",
+    "typescript",
+    "javascript",
+    "inertiajs"
+  ],
+  "author": "Joshua Heathcote",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/JoshuaHeathcote1987/Table/issues"
+  },
+  "homepage": "https://github.com/JoshuaHeathcote1987/Table#readme"
+}
