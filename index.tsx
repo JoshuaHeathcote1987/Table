@@ -19,12 +19,11 @@ import { Transition } from "@headlessui/react";
 
 // Update TableProps to use the User type for the user property
 interface TableProps {
-    url: string;
     results: { [key: string]: any }[];
     fields: any[];
 }
 
-export function Table({ url = "", results = [], fields = [] }: TableProps) {
+export function Table({ results = [], fields = [] }: TableProps) {
 
     const pageSlug = window.location.pathname;
     const headers = results && results.length > 0 && results[0] ? Object.keys(results[0]) : [];
@@ -67,9 +66,10 @@ export function Table({ url = "", results = [], fields = [] }: TableProps) {
             setDisplay(storedDisplay as 'desktop' | 'mobile'); // Ensure type safety
         }
 
-        const indexOfLastItem = 1 * itemsPerPage;
-        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-        setDisplayedResults(results.slice(indexOfFirstItem, indexOfLastItem));
+        // const indexOfLastItem = 1 * itemsPerPage;
+        // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        // setDisplayedResults(results.slice(indexOfFirstItem, indexOfLastItem));
+        handlePageChange(1);
     }, []); // Empty dependency array means this runs once when the component mounts
 
     // Effect to save the display mode to localStorage whenever it changes
@@ -95,7 +95,7 @@ export function Table({ url = "", results = [], fields = [] }: TableProps) {
         });
     }, [headers, pageSlug]);
 
-    useEffect(() => {
+    useEffect(function displayState() {
         localStorage.setItem('taskManagerDisplayState', display);
     }, [display]);
 
@@ -215,19 +215,19 @@ export function Table({ url = "", results = [], fields = [] }: TableProps) {
         <>
             <CreateModal
                 fields={fields}
-                submitUrl={url}
+                submitUrl={pageSlug}
                 state={toggleCreateModal}
                 set={setToggleCreateModal}
             />
             <UpdateModal
                 result={result}
-                submitUrl={url}
+                submitUrl={pageSlug}
                 state={toggleUpdateModal}
                 set={setToggleUpdateModal}
             />
             <DeleteModal
                 result={result}
-                submitUrl={url}
+                submitUrl={pageSlug}
                 state={toggleDeleteModal}
                 set={setToggleDeleteModal}
             />
