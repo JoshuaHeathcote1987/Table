@@ -32,26 +32,21 @@ export function Table({ results = [], fields = [] }: TableProps) {
     const [selectedHeader, setSelectedHeader] = useState<string | null>(null);
     const [sortDirection, setSortDirection] = useState<"asc" | "desc" | null>(null);
     const [displayedResults, setDisplayedResults] = useState<any[]>(results);
+    const [sortedResults, setSortedResults] = useState<any[]>(results);
     const [display, setDisplay] = useState<'desktop' | 'mobile' | 'help'>('desktop');
     const [searchQuery, setSearchQuery] = useState<string>("");
 
     const [currentPage, setCurrentPage] = useState(1);
 
-    const itemsPerPage = 20;
+    const [itemsPerPage, setItemsPerPage] = useState(20);
     const [totalPages, setTotalPages] = useState(Math.ceil(displayedResults.length / itemsPerPage));
-
-    const handlePageChange = (pageNumber: number) => {
-        setCurrentPage(pageNumber);
-        const indexOfLastItem = pageNumber * itemsPerPage;
-        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-        setDisplayedResults(results.slice(indexOfFirstItem, indexOfLastItem));
-    };
 
     const [toggleCreateModal, setToggleCreateModal] = useState(false);
     const [toggleUpdateModal, setToggleUpdateModal] = useState(false);
     const [toggleDeleteModal, setToggleDeleteModal] = useState(false);
 
     const [result, setResult] = useState({});
+
 
     // Update displayedResults whenever the results prop changes
     useEffect(() => {
@@ -99,11 +94,17 @@ export function Table({ results = [], fields = [] }: TableProps) {
         localStorage.setItem('taskManagerDisplayState', display);
     }, [display]);
 
+    const handlePageChange = (pageNumber: number) => {
+        setCurrentPage(pageNumber);
+        const indexOfLastItem = pageNumber * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        setDisplayedResults(sortedResults.slice(indexOfFirstItem, indexOfLastItem));
+    };
+
     const handleSort = (direction: "asc" | "desc") => {
         if (selectedHeader) {
             setSortDirection(direction);
 
-            // Sort the results based on the selectedHeader and direction
             const sorted = [...results].sort((a, b) => {
                 const valueA = a[selectedHeader] ?? ""; // Handle undefined or null values
                 const valueB = b[selectedHeader] ?? "";
@@ -113,37 +114,14 @@ export function Table({ results = [], fields = [] }: TableProps) {
                 return 0;
             });
 
-            setDisplayedResults(sorted);
+            setSortedResults(sorted);
+
+            // Update displayedResults to reflect the sorted and paginated results
+            const indexOfLastItem = currentPage * itemsPerPage;
+            const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+            setDisplayedResults(sorted.slice(indexOfFirstItem, indexOfLastItem));
         }
     };
-
-    const updateDeleteDisplay = (result: any[]) => {
-        return (
-            <Dropdown>
-                <Dropdown.Trigger>
-                    <button className="hover:text-orange-400 text-2xl flex flex-row items-center">
-                        <HiDotsHorizontal />
-                    </button>
-                </Dropdown.Trigger>
-                <Dropdown.Content>
-                    <div className="p-4 space-y-4 flex flex-col">
-                        <button onClick={() => handleUpdate(result)}>
-                            <div className="flex flex-row items-center space-x-4 hover:bg-yellow-100 p-2 rounded text-left">
-                                <MdEditSquare className="text-xl" />
-                                <div>Update</div>
-                            </div>
-                        </button>
-                        <button onClick={() => handleDelete(result)}>
-                            <div className="flex flex-row items-center space-x-4 hover:bg-red-100 p-2 rounded text-left">
-                                <MdDelete className="text-xl" />
-                                <div>Delete</div>
-                            </div>
-                        </button>
-                    </div>
-                </Dropdown.Content>
-            </Dropdown>
-        );
-    }
 
     const handleDelete = (result: any[]) => {
         setResult(result);
@@ -192,22 +170,76 @@ export function Table({ results = [], fields = [] }: TableProps) {
         localStorage.setItem(`${pageSlug}-hiddenHeaders`, JSON.stringify(hiddenHeaders));
     };
 
+    const handlePaginationDisplayAmount = (event: any) => {
+        setItemsPerPage(event.target.value);
+
+        const newTotalPages = Math.ceil(sortedResults.length / event.target.value);
+        setTotalPages(newTotalPages);
+
+        // Assuming sortedResults is already populated with the sorted data
+        const newItemsPerPage = event.target.value;
+        const indexOfLastItem = newItemsPerPage;
+        const indexOfFirstItem = 0;
+        setDisplayedResults(sortedResults.slice(indexOfFirstItem, indexOfLastItem));
+
+        // Update current page to 1 (assuming pagination starts from page 1)
+        setCurrentPage(1);
+    };
+
     const displayPagination = () => {
         return (
-            <div className="flex space-x-2 p-4">
-                {Array.from({ length: totalPages }, (_, index) => (
-                    <button
-                        key={index}
-                        className={`px-4 py-2 rounded border ${currentPage === index + 1
-                            ? "bg-blue-500 text-white border-blue-500"
-                            : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
-                            }`}
-                        onClick={() => handlePageChange(index + 1)}
-                    >
-                        {index + 1}
-                    </button>
-                ))}
+            <div className="flex p-4 justify-between items-center">
+                <div className="flex space-x-2">
+                    {Array.from({ length: totalPages }, (_, index) => (
+                        <button
+                            key={index}
+                            className={`px-4 py-2 rounded border ${currentPage === index + 1
+                                ? "bg-blue-500 text-white border-blue-500"
+                                : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                                }`}
+                            onClick={() => handlePageChange(index + 1)}
+                        >
+                            {index + 1}
+                        </button>
+                    ))}
+                </div>
+                <div>
+                    <select className="rounded-lg" value={itemsPerPage} onChange={handlePaginationDisplayAmount}>
+                        <option value="10">10</option>
+                        <option value="20">20</option>
+                        <option value="40">40</option>
+                        <option value="80">80</option>
+                    </select>
+                </div>
             </div>
+        );
+    }
+    
+    const displayUpdateDelete = (result: any[]) => {
+        return (
+            <Dropdown>
+                <Dropdown.Trigger>
+                    <button className="hover:text-blue-400 text-2xl flex flex-row items-center">
+                        <HiDotsHorizontal />
+                    </button>
+                </Dropdown.Trigger>
+                <Dropdown.Content>
+                    <div className="p-4 space-y-4 flex flex-col">
+                        <button onClick={() => handleUpdate(result)}>
+                            <div className="flex flex-row items-center space-x-4 hover:bg-yellow-100 p-2 rounded text-left">
+                                <MdEditSquare className="text-xl" />
+                                <div>Update</div>
+                            </div>
+                        </button>
+                        <button onClick={() => handleDelete(result)}>
+                            <div className="flex flex-row items-center space-x-4 hover:bg-red-100 p-2 rounded text-left">
+                                <MdDelete className="text-xl" />
+                                <div>Delete</div>
+                            </div>
+                        </button>
+                    </div>
+                </Dropdown.Content>
+            </Dropdown>
         );
     }
 
@@ -237,14 +269,14 @@ export function Table({ results = [], fields = [] }: TableProps) {
 
                         <button onClick={() => setToggleCreateModal(!toggleCreateModal)} className="flex flex-col justify-center items-center gap-2 group">
                             <IoIosAddCircle className="text-xl" />
-                            <div className="group-hover:text-orange-500 transition-all">Create</div>
+                            <div className="group-hover:text-blue-500 transition-all">Create</div>
                         </button>
                         {/* Filter Dropdown */}
                         <Dropdown>
                             <Dropdown.Trigger>
                                 <button className="flex flex-col justify-center items-center gap-2 group">
                                     <FaFilter className="text-xl" />
-                                    <div className="group-hover:text-orange-500 transition-all">Filter</div>
+                                    <div className="group-hover:text-blue-500 transition-all">Filter</div>
                                 </button>
                             </Dropdown.Trigger>
                             <Dropdown.Content align='left' contentClasses='py-1 bg-white w-96'>
@@ -271,7 +303,7 @@ export function Table({ results = [], fields = [] }: TableProps) {
                             <Dropdown.Trigger>
                                 <button className="flex flex-col justify-center items-center gap-2 group">
                                     <FaSort className="text-xl" />
-                                    <div className="group-hover:text-orange-500 transition-all">Sort</div>
+                                    <div className="group-hover:text-blue-500 transition-all">Sort</div>
                                 </button>
                             </Dropdown.Trigger>
                             <Dropdown.Content align='left' contentClasses='py-1 bg-white w-96'>
@@ -297,30 +329,30 @@ export function Table({ results = [], fields = [] }: TableProps) {
                                 <div className="p-4 flex flex-row justify-center gap-12 text-4xl">
                                     <button
                                         onClick={() => handleSort("asc")}
-                                        className={sortDirection === "asc" ? "text-orange-500 transition-all" : ""}
+                                        className={sortDirection === "asc" ? "text-blue-500 transition-all" : ""}
                                     >
-                                        <FaSortAlphaDown className="hover:text-orange-500 transition-all" />
+                                        <FaSortAlphaDown className="hover:text-blue-500 transition-all" />
                                     </button>
                                     <button
                                         onClick={() => handleSort("desc")}
-                                        className={sortDirection === "desc" ? "text-orange-500 transition-all" : ""}
+                                        className={sortDirection === "desc" ? "text-blue-500 transition-all" : ""}
                                     >
-                                        <FaSortAlphaDownAlt className="hover:text-orange-500 transition-all" />
+                                        <FaSortAlphaDownAlt className="hover:text-blue-500 transition-all" />
                                     </button>
                                 </div>
                             </Dropdown.Content>
                         </Dropdown>
-                        <button onClick={() => setDisplay("desktop")} className={`flex flex-col justify-center items-center gap-2 group ${display === 'desktop' ? 'text-orange-500 transition-all' : ''}`}>
+                        <button onClick={() => setDisplay("desktop")} className={`flex flex-col justify-center items-center gap-2 group ${display === 'desktop' ? 'text-blue-500 transition-all' : ''}`}>
                             <MdDesktopWindows className="text-xl" />
-                            <div className="group-hover:text-orange-500 transition-all">Desktop</div>
+                            <div className="group-hover:text-blue-500 transition-all">Desktop</div>
                         </button>
-                        <button onClick={() => setDisplay("mobile")} className={`flex flex-col justify-center items-center gap-2 group ${display === 'mobile' ? 'text-orange-500 transition-all' : ''}`}>
+                        <button onClick={() => setDisplay("mobile")} className={`flex flex-col justify-center items-center gap-2 group ${display === 'mobile' ? 'text-blue-500 transition-all' : ''}`}>
                             <PiDeviceMobileFill className="text-xl" />
-                            <div className="group-hover:text-orange-500 transition-all">Mobile</div>
+                            <div className="group-hover:text-blue-500 transition-all">Mobile</div>
                         </button>
-                        <button onClick={() => setDisplay("help")} className={`flex flex-col justify-center items-center gap-2 group ${display === 'help' ? 'text-orange-500 transition-all' : ''}`}>
+                        <button onClick={() => setDisplay("help")} className={`flex flex-col justify-center items-center gap-2 group ${display === 'help' ? 'text-blue-500 transition-all' : ''}`}>
                             <IoHelpBuoy className="text-xl" />
-                            <div className="group-hover:text-orange-500 transition-all">Help</div>
+                            <div className="group-hover:text-blue-500 transition-all">Help</div>
                         </button>
                     </div>
                     {/* Search */}
@@ -390,7 +422,7 @@ export function Table({ results = [], fields = [] }: TableProps) {
                                                     ))}
                                                     <td className="px-4 py-2">
                                                         {/* Additional Options Column if needed */}
-                                                        {updateDeleteDisplay(result)}
+                                                        {displayUpdateDelete(result)}
                                                     </td>
                                                 </tr>
                                             ))
@@ -456,7 +488,7 @@ export function Table({ results = [], fields = [] }: TableProps) {
                                             )}
                                             {/* Actions */}
                                             <div className="flex justify-end space-x-4">
-                                                {updateDeleteDisplay(result)}
+                                                {displayUpdateDelete(result)}
                                             </div>
                                         </div>
                                     ))
